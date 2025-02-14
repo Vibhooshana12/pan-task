@@ -1,0 +1,32 @@
+# YAML script for deploying the HTML form to Azure Web App
+
+trigger:
+  branches:
+    include:
+      - main  # or 'master' if your main branch is named 'master'
+
+pool:
+  vmImage: 'windows-latest'  # You can also choose 'windows-latest' if you prefer a Windows agent
+
+steps:
+- task: Checkout@1  # Checkout your code from the repository
+  displayName: 'Checkout Code'
+
+- script: |
+    echo "Building and copying files to the staging directory"
+    cp -R * $(Build.ArtifactStagingDirectory)  # Copy all files to the build artifact directory
+  displayName: 'Copy Files to Artifact Staging Directory'
+
+- task: PublishBuildArtifacts@1  # Publish the files to the Azure App Service
+  inputs:
+    artifactName: 'drop'  # Name for the artifact to be used in the deployment
+    publishLocation: 'Container'  # Use 'Container' to store it in the build container
+  displayName: 'Publish Build Artifacts'
+
+- task: AzureWebApp@1
+  inputs:
+    azureSubscription: 'Free Trail'  # Use your Azure service connection name
+    appName: 'build-mywebapp'  # Name of the Azure Web App
+    package: '$(Build.ArtifactStagingDirectory)/drop'  # Path to the files to deploy
+    deploymentMethod: 'zip'  # Use zip deployment method
+  displayName: 'Deploy to Azure Web App'
